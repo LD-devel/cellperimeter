@@ -95,7 +95,7 @@ class Intersection:
     def get_points(self) -> list:
         return self.line_points
 
-
+output_rows = []
 for entry in os.listdir(input_dir):
     # Load the image
     image = io.imread(input_dir/ entry)  # Replace with the actual path
@@ -128,8 +128,6 @@ for entry in os.listdir(input_dir):
 
     # Use mark_boundaries to color only the perimeter of the region
     colored_image = segmentation.mark_boundaries(colored_image, region_mask, color=(0, 0, 1), mode='thick')  # Set color to red
-
-    perimeter = largest_region.perimeter
     
     # detect 
     intersec = Intersection(label_image, label)
@@ -142,3 +140,19 @@ for entry in os.listdir(input_dir):
 
     # Get coordinates of the largest region
     io.imsave(output_dir / entry, binary_image_uint8)
+    
+    # Export stats
+    perimeter = largest_region.perimeter
+    perimeter_cleaned = perimeter - intersec.get_perimeter_diff()
+    line_length = np.linalg.norm([points[0][0]-points[1][0],points[0][1]-points[1][1] ], ord=1)
+    perimeter_normalized = perimeter_cleaned / line_length
+    new_row = {
+       'filename': entry,
+       'perimeter': perimeter, 
+       'perimeter cleaned': perimeter_cleaned, 
+       'perimeter normalized': perimeter_normalized,
+    }
+    output_rows.append(new_row)
+
+df = pd.DataFrame(output_rows)
+df.to_csv(output_dir/'Results.csv')
